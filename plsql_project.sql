@@ -18,11 +18,21 @@ CREATE SEQUENCE game_sequence
     START WITH 1
     INCREMENT BY 1
     CACHE 20;	
+
+
+CREATE SEQUENCE shuffle_sequence
+    MINVALUE 1
+    MAXVALUE 52
+    START WITH 1
+    INCREMENT BY 1
+    CACHE 20;
 	
    CREATE TABLE game_info(
 		g_id INTEGER NOT NULL PRIMARY KEY,
 		g_date Date NOT NULL,
-		g_player VARCHAR2(25) NOT NULL,
+		g_player1 VARCHAR2(25) NOT NULL,
+		g_player2 VARCHAR2(25),
+		g_player3 VARCHAR2(25),
 		resume char(1) DEFAULT 'F'
 	);
 	
@@ -36,12 +46,23 @@ CREATE SEQUENCE game_sequence
 		loss_percentage NUMBER(3,2)
 	);
 	
+  CREATE TABLE game_players_cards(
+		play_order 
+       g_id INTEGER NOT NULL PRIMARY KEY,
+	   g_player VARCHAR2(25) NOT NULL,
+	   card_id INTEGER 
+	);
 	--check code
 	CREATE TABLE Deck_Cards(
 		card_id INTEGER IDENTITY(1,1) PRIMARY KEY NOT NULL,
 		card_name VARCHAR2(10) NOT NULL,
 		card_min_val INTEGER NOT NULL,
 		card_max_val INTEGER NOT NULL);
+	
+	CREATE TABLE ShuffledDeck(
+	    shuffle_id INTEGER PRIMARY KEY NOT NULL,
+		card_name VARCHAR2(10) NOT NULL
+	);
 	
 --INSERT CARD AND THEIR VALUES
 INSERT INTO Deck_Cards VALUES (1,'D.A', 1, 11);
@@ -331,98 +352,85 @@ BEGIN
 END abort_game;
 
 
-CREATE OR REPLACE PROCEDURE record_cards (game_id game_info.game_id%TYPE, player_id user_info.account_name%TYPE, card_id IN Deck_Cards.card_id%TYPE)
+CREATE OR REPLACE PROCEDURE record_cards (game_id IN game_info.game_id%TYPE, player_id IN user_info.account_name%TYPE, card_id IN Deck_Cards.card_id%TYPE,i)
 IS
-   TYPE c_game_id IS TABLE OF INTEGER;
-   TYPE c_card_id IS TABLE OF INTEGER;
-   TYPE c_player IS TABLE OF VARCHAR2(25);
-   v_g_id c_game_id;
-   v_card_id c_card_id;
-   v_player c_player;
 BEGIN
-    v_
-    v_g_id(game_id) := player_id;
-    v_player(player_id) := card_id;
 	
-	FOR i IN names.FIRST .. names.LAST
-	  LOOP
-		  IF names(i) = 'J Hamil' THEN
-			NULL;
-		  END IF;
-	  END LOOP;
-END abort_game;
+ INSERT INTO game_players_cards VALUES (game_id, player_id,card_id);
+END record_cards;
 
 
---START OF COPY
+CREATE OR REPLACE PROCEDURE resume_cards (game_id IN game_info.game_id%TYPE, player_id IN OUT user_info.account_name%TYPE, card_id IN OUT Deck_Cards.card_id%TYPE )
+IS
+	excep_no_game_found EXCEPTION;
+	rec_game_his game_info%ROWTYPE;
+	rec_game_play_his game_info%ROWTYPE;
+	v_count INTEGER;
+BEGIN
+	SELECT * INTO rec_game_his FROM game_info WHERE g_id = game_id AND resume = 'T';
+	WHEN NO_DATA_FOUND RAISE(excep_no_game_found);
+	SELECT count(*) into v_count from Deck_Cards;
+	FOR i in 1..v_count LOOP
+	  COLL(i) := SELECT g_id  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	  COLL(i) := SELECT  player_name  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	  COLL(i) :=  SELECT card_id  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	END LOOP;
+	EXCEPTION
+	WHEN excep_no_game_found THEN
+		DBMS_OUTPUT.PUT_LINE('Game does not exist or has ended');
+END resume_cards;
 
-CREATE OR REPLACE PACKAGE deck_package IS  
-  -- PROCEDURES
+
+CREATE OR REPLACE PACKAGE deck_package IS 
+
   PROCEDURE shuffle_deck;
   
-  -- FUNCTIONS
   FUNCTION get_card_value;
-  -- Include other functions/procedures --
+  
 END deck_of_cards;
 
--- DECK PACKAGE
 CREATE OR REPLACE PACKAGE BODY deck_package IS
   
-  -- PROCEDURE shuffle_deck clears the existing ShuffledDeck table
-  --  reads all rows from the Deck table (ordering by random), 
-  --  and inserts them into the empty ShuffledDeck.
-  PROCEDURE shuffle_deck IS   
-  BEGIN
-    DELETE FROM ShuffledDeck;                     -- Clears the ShuffledDeck table
-    INSERT INTO ShuffledDeck (cardFace, cardSuit) -- Inserts into ShuffledDecktable
-     SELECT cardFace, cardSuit FROM Deck            -- All rows of both columns
-           ORDER BY dbms_random.value;              -- Randomizes order of SELECT rows
+  PROCEDURE shuffle_deck    
+	IS
+	  v_card_rec Deck_Cards%ROWTYPE;
+	  v_count INTEGER;
+	BEGIN
+	   DELETE FROM ShuffledDeck; 
+	   select * into v_card_rec from Deck_Cards ORDER BY dbms_random.value;
+	SELECT count(*) into v_count from Deck_Cards;
+	   FOR i in 1.. v_count LOOP
+		INSERT INTO ShuffledDeck VALUES (shuffle_sequence.nextval,v_card_rec.card_name);
+	   END LOOP;		   
   END shuffle_deck;
   
-  -- FUNCTION get_card_value returns the numerical value of a card,
-  --	based on the face value of the card. 
-  -- It will return 10 for J, Q, K, and either 1 or 11 for A, 
-  --	depending on the total value of the hand it is being added to.
-  -- It requires two arguments: 
-  --	The first is a VARCHAR representing the face value
-  --	The second is a NUMBER representing the existing hand value
+  
   FUNCTION get_card_value
-	  ( face_value IN VARCHAR		-- The face value of the card
-		  hand_value IN NUMBER )	-- The hand value before this card is added
-	  RETURN number 			-- Return type
+	  ( face_value IN VARCHAR		
+		  hand_value IN NUMBER )	
+	  RETURN number 			
 	  IS
 	
   DECLARE
-	  value NUMBER;				-- The numerical value to be returned
+	  value NUMBER;				
 	
   BEGIN
-	  -- Assign proper value based on face_value
-	  value := 
-	  CASE face_value		-- Face Values:
-  		WHEN 'J' THEN 10	-- Jack
-		  WHEN 'Q' THEN 10	-- Queen
-	  	WHEN 'K' THEN 10	-- King
-  		WHEN 'A' THEN 		-- Ace
-		  	--	If the hand_value passed is less than 11,
-	  		-- the Ace is worth 11, else, it is worth 1.
-  			IF (hand_value < 11) THEN
-			  	value := 11;
+      if face_value in ('C.A' ,'D.A','H.A','S.A')   
+	        IF (hand_value < 11) THEN
+		        SELECT card_max_val INTO value FROM Deck_Cards WHERE card_name = face_value;
 		  	ELSE	
-	  			value := 1;
+			    SELECT card_min_val INTO value FROM Deck_Cards WHERE card_name = face_value;
   			END IF;
-		-- If face_value is not a letter, 
-	  	-- convert from VARCHAR to NUMBER
-  		ELSE
-		  	TO_NUMBER(face_value)
-	  END
+	  ELSE 
+		    SELECT card_min_val INTO value FROM Deck_Cards WHERE card_name = face_value;
+	  END IF;
 	  RETURN value;
 	
   EXCEPTION
-	  -- Miscellaneous exception handler
+  
 	  WHEN OTHERS THEN
 		  DBMS_OUTPUT.PUT_LINE(TO_CHAR(SQLCODE)||
 	  		": ERROR IN FUNCTION get_card_value - " || SQLERRM);
 END;
   
 END deck_package;
-
---END OF COPY
