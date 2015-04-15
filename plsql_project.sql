@@ -272,6 +272,21 @@ EXCEPTION
    DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
 END delete_user_info;
 
+--Display Current Game Statistics
+CREATE OR REPLACE PROCEDURE display_CurentGame_Stats
+ (p_game_id IN game_statistics.g_id%TYPE) 
+IS
+  v_game_info game_statistics%ROWTYPE;
+  ex_invalid_player_c_info exception;
+BEGIN
+   SELECT * FROM game_info WHERE game_id = p_game_id;
+   DBMS_OUTPUT.PUT_LINE ('Game ID -  ' || v_game_info.g_id);
+   DBMS_OUTPUT.PUT_LINE ('Winner - ' || v_game_info.winner);
+   DBMS_OUTPUT.PUT_LINE ('Losers -  ' || v_game_info.loser);
+EXCEPTION
+   WHEN NO_DATA_FOUND THEN 
+   DBMS_OUTPUT.PUT_LINE ('Game not found!');
+END display_CurentGame_Stats;
 
 ----------game_start------------
 CREATE OR REPLACE PROCEDURE get_game_h_info
