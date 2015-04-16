@@ -182,7 +182,7 @@ BEGIN
 END record_cards;
 
 
-CREATE OR REPLACE PROCEDURE resume_cards (game_id IN game_info.game_id%TYPE, player_id IN OUT user_info.account_name%TYPE, card_id IN OUT Deck_Cards.card_id%TYPE )
+CREATE OR REPLACE PROCEDURE resume_game (game_id IN game_info.game_id%TYPE, player_id IN OUT user_info.account_name%TYPE, card_id IN OUT Deck_Cards.card_id%TYPE )
 IS
 	excep_no_game_found EXCEPTION;
 	rec_game_his game_info%ROWTYPE;
@@ -200,7 +200,7 @@ BEGIN
 	EXCEPTION
 	WHEN excep_no_game_found THEN
 		DBMS_OUTPUT.PUT_LINE('Game does not exist or has ended');
-END resume_cards;
+END resume_game;
 
 
 CREATE OR REPLACE PROCEDURE display_game_score (player_id IN OUT user_info.account_name%TYPE, card_id IN OUT Deck_Cards.card_id%TYPE )
@@ -232,7 +232,7 @@ CREATE OR REPLACE PACKAGE deck_package IS
   --get card value header--
   FUNCTION get_card_value;
   
-END deck_of_cards;
+END deck_package;
 
 CREATE OR REPLACE PACKAGE BODY deck_package IS
 	
@@ -488,8 +488,32 @@ END game_initial;
 
 ------------main----------
 DECLARE
+  v_m_menu_num INTEGER;
+  v_u_menu_num INTEGER;
 BEGIN
    DBMS_OUTPUT.PUT_LINE('Welcome to the BlackJack !!! -- JIAJUN XUE <nicoxue0324@gmail.com>');
-   DBMS_OUTPUT.PUT_LINE('Game Initialize..');
+   DBMS_OUTPUT.PUT_LINE('Game Initialize...');
    game_initial.game_inital(2,TRUE);
+   DBMS_OUTPUT.PUT_LINE('------List Of The Main Menu-------');
+   DBMS_OUTPUT.PUT_LINE('1.  Go To Play Game');
+   DBMS_OUTPUT.PUT_LINE('2.  User Managements');   
+   DBMS_OUTPUT.PUT_LINE('3.  Exit Game');
+   DBMS_OUTPUT.PUT_LINE('Please enter the number: ',&v_m_menu_num);
+   CASE v_m_menu_num
+     WHEN 1 THEN 
+	   deck_package.shuffle_deck;
+	 WHEN 2 THEN
+	   DBMS_OUTPUT.PUT_LINE('------List Of The User Menu-------');
+	   DBMS_OUTPUT.PUT_LINE('1.  Create New User');
+	   DBMS_OUTPUT.PUT_LINE('2.  Read User Info');   
+	   DBMS_OUTPUT.PUT_LINE('3.  Update User Info');
+	   DBMS_OUTPUT.PUT_LINE('4.  Change User Password');
+	   DBMS_OUTPUT.PUT_LINE('5.  Delete User Info');
+	   DBMS_OUTPUT.PUT_LINE('Please enter the number: ',&v_u_menu_num);  
+       CASE v_u_menu_num
+          WHEN 	   
+	 WHEN 3 THEN
+	 ELSE  DBMS_OUTPUT.PUT_LINE('Invalid Number')
+   END
+   
 END;
