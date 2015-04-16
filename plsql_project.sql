@@ -373,8 +373,9 @@ CREATE OR REPLACE PACKAGE BODY game_initial IS
 				DBMS_OUTPUT.PUT_LINE('You have been logged in.');
 				return TRUE;
 				END IF;
-		ELSE EXECUTE create_user_info(&p_account_name, &p_email, &p_password, &p_f_name, &p_l_name);
-		
+		ELSE 
+		DBMS_OUTPUT.PUT_LINE('Player not found. Please create account.');
+		EXECUTE create_user_info(&p_account_name, &p_email, &p_password, &p_f_name, &p_l_name);
 		END IF;
 		EXCEPTION
 		WHEN NO_DATA_FOUND THEN
