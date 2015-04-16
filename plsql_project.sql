@@ -47,7 +47,6 @@ CREATE SEQUENCE shuffle_sequence
 	);
 	
   CREATE TABLE game_players_cards(
-		play_order 
        g_id INTEGER NOT NULL PRIMARY KEY,
 	   g_player VARCHAR2(25) NOT NULL,
 	   card_id INTEGER 
