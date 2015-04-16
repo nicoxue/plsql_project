@@ -1,7 +1,4 @@
 DECLARE
-   TYPE c_game_id IS TABLE OF INTEGER;
-   TYPE c_card_id IS TABLE OF INTEGER;
-   TYPE c_player IS TABLE OF VARCHAR2(25);
    
    CREATE TABLE user_info(
 		account_name VARCHAR2(25) NOT NULL PRIMARY KEY,
@@ -120,177 +117,12 @@ INSERT INTO Deck_Cards VALUES (50,'S.J', 10, 10);
 INSERT INTO Deck_Cards VALUES (51,'S.Q', 10, 10);
 INSERT INTO Deck_Cards VALUES (52,'S.K', 10, 10);
 
-   
-   v_g_id c_game_id;
-   v_card_id c_card_id;
-   v_player c_player;
-   
-BEGIN
-   v_id := card_id(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52);
-   v_name := card_name('D.A','D.2','D.3','D.4','D.5','D.6','D.7','D.8','D.9','D.10','D.J','D.Q','D.K',
-                       'H.A','H.2','H.3','H.4','H.5','H.6','H.7','H.8','H.9','H.10','H.J','H.Q','H.K',
-					   'C.A','C.2','C.3','C.4','C.5','C.6','C.7','C.8','C.9','C.10','C.J','C.Q','C.K',
-					   'S.A','S.2','S.3','S.4','S.5','S.6','S.7','S.8','S.9','S.10','S.J','S.Q','S.K');
-   v_min_val := card_min_val(1,2,3,4,5,6,7,8,9,10,10,10,10,1,2,3,4,5,6,7,8,9,10,10,10,10,1,2,3,4,5,6,7,8,9,10,10,10,10,1,2,3,4,5,6,7,8,9,10,10,10,10);
-   v_max_val := card_max_val(11,2,3,4,5,6,7,8,9,10,10,10,10,11,2,3,4,5,6,7,8,9,10,10,10,10,11,2,3,4,5,6,7,8,9,10,10,10,10,11,2,3,4,5,6,7,8,9,10,10,10,10);
-   dbms_output.put_line('Total: '|| v_id.count);
-   V_player := 2;
-   v_id_new :=  TRUNC(dbms_random.value(1, v_id.count));
-   dbms_output.put_line('v_id_new: '|| v_id_new);
-END;
-
---Game Initialization
-CREATE OR REPLACE PROCEDURE  inital
- (p_player_num  IN OUT INTEGER DEFAULT 1,
-  p_hint  IN BOOLEAN DEFAULT TRUE) 
-IS
-  s_dept_id f_emps.department_id%TYPE;
-  v_player game_info.g_player%TYPE;
-  v_game_id game_info.game_id%TYPE;
-  ex_invalid_player_num exception;
-BEGIN
-   IF (p_player_num > 3) THEN
-     RAISE ex_invalid_player_num;
-   IF (p_hint = TRUE) THEN 
-     DBMS_OUTPUT.PUT_LINE ('Number of Players - ' || p_player_num);
-	 
-	 v_game_id = game_sequence.NEXTVAL;
-    FOR i in 1...p_player_num LOOP	
-	  check_player_info(&player_name,&password);
-	  v_player1 := player_name;	
-	  INSERT INTO game_info
-		(game_id, g_date,g_player, resume)
-		VALUES
-		(v_game_id, TO_DATE(SYSDATE,'DD-MON-YYYY'),v_player ,'T');	
-	 END LOOP;
-	 
-EXCEPTION
-   WHEN ex_invalid_player_num THEN 
-   DBMS_OUTPUT.PUT_LINE ('Number of Players can not be more than 3!');
-END inital;
-
-CREATE OR REPLACE FUNCTION check_player_info(f_player_name IN user_info.account_name%TYPE, f_password IN user_info.password%TYPE)
-RETURN BOOLEAN 
-IS
-v_username user_info.account_name%TYPE;
-v_password user_info.password%TYPE;
-BEGIN
---check if player exists
-	IF(check_user_info(player_name) = TRUE)THEN
-	--if player exists, then check the supplied username and password
-		SELECT account_name , password into v_username, v_password FROM user_info WHERE account_name = f_player_name;
-		--if row exists
-		IF (f_player_name = v_username AND f_password = v_password) THEN 
-			DBMS_OUTPUT.PUT_LINE('You have been logged in.');
-			return TRUE;
-			END IF;
-	ELSE EXECUTE create_user_info(&p_account_name, &p_email, &p_password, &p_f_name, &p_l_name);
-	
-	END IF;
-	EXCEPTION
-	WHEN NO_DATA_FOUND THEN
-	DBMS_OUTPUT.PUT_LINE('Wrong username or password.');
-	
-
---Check if user exists
-CREATE OR REPLACE FUNCTION check_user_info
- (p_account_name  IN OUT user_info.account_name%TYPE) 
- RETURN BOOLEAN 
-IS
-BEGIN
-   SELECT account_name FROM user_info WHERE account_name = p_account_name;
-   DBMS_OUTPUT.PUT_LINE ('The User ' || account_name || ' exist!');
-   return TRUE;
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN 
-   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
-END check_user_info;
-
---Create User
-CREATE OR REPLACE PROCEDURE create_user_info
- (p_account_name  IN OUT user_info.account_name%TYPE,
-  p_email IN OUT user_info.email%TYPE,
-  p_password IN OUT user_info.password%TYPE,
-  p_f_name IN OUT user_info.f_name%TYPE,
-  p_l_name IN OUT user_info.l_name%TYPE) 
-IS
-  ex_invalid_player_c_info exception;
-BEGIN
-   IF p_account_name.LENGTH == 0 or p_email.LENGTH == 0 or p_password.LENGTH == 0 or p_f_name.LENGTH == 0 or p_l_name.LENGTH == 0 THEN 
-     RAISE ex_invalid_player_c_info;
-   ELSE   
-     INSERT INTO user_info VALUES(p_account_name,p_email,p_password,p_f_name,p_l_name);
-	 DBMS_OUTPUT.PUT_LINE ('The username ' || p_account_name || 'created successed!');
-   END IF;
-EXCEPTION
-   WHEN ex_invalid_player_c_info THEN 
-   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
-END create_user_info;
-
---Read User
-CREATE OR REPLACE PROCEDURE read_user_info
- (p_account_name  IN user_info.account_name%TYPE) 
-IS
-  v_info user_info%ROWTYPE;
-BEGIN
-   SELECT * into v_info FROM user_info WHERE account_name = p_account_name;
-   DBMS_OUTPUT.PUT_LINE ('User Unique name -  ' || v_info.p_account);
-   DBMS_OUTPUT.PUT_LINE ('Email - ' || v_info.p_email);
-   DBMS_OUTPUT.PUT_LINE ('Password - ' || v_info.p_password);
-   DBMS_OUTPUT.PUT_LINE ('First Name ' || v_info.p_f_name);
-   DBMS_OUTPUT.PUT_LINE ('Last Name ' || v_info.p_l_name);
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN 
-   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
-END read_user_info;
+  
 
 
-CREATE OR REPLACE PROCEDURE update_user_info
- (p_account_name  IN OUT user_info.account_name%TYPE,
-  p_email IN OUT user_info.email%TYPE,
-  p_f_name IN OUT user_info.f_name%TYPE,
-  p_l_name IN OUT user_info.l_name%TYPE) 
-IS
-  ex_invalid_player_c_info exception;
-BEGIN
-   IF p_account_name.LENGTH == 0 or p_email.LENGTH == 0 or p_f_name.LENGTH == 0 or p_l_name.LENGTH == 0 THEN 
-     RAISE ex_invalid_player_c_info;
-   ELSE   
-     UPDATE user_info SET email = p_email ,f_name = p_f_name,l_name = p_l_name WHERE account_name = p_account_name;
-   END IF;
-EXCEPTION
-   WHEN ex_invalid_player_c_info THEN 
-   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
-END update_user_info;
-
---Change Password
-CREATE OR REPLACE PROCEDURE change_user_pwd
- (p_account_name  IN OUT user_info.account_name%TYPE,
-  p_password IN OUT user_info.password%TYPE) 
-IS
-  ex_invalid_player_c_info exception;
-BEGIN
-   IF  p_account_name.LENGTH == 0 or p_password.LENGTH == 0 THEN 
-     RAISE ex_invalid_player_c_info;
-   ELSE   
-     UPDATE user_info SET password = p_password WHERE account_name = p_account_name;
-   END IF;
-EXCEPTION
-   WHEN ex_invalid_player_c_info THEN 
-   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
-END change_user_pwd;
 
 
-CREATE OR REPLACE PROCEDURE delete_user_info
- (p_account_name  IN user_info.account_name%TYPE) 
-IS
-  ex_invalid_player_c_info exception;
-BEGIN
-   DELETE FROM user_info WHERE account_name = p_account_name;
-EXCEPTION
-   WHEN NO_DATA_FOUND THEN 
-   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
-END delete_user_info;
+
 
 --Display Current Game Statistics
 CREATE OR REPLACE PROCEDURE display_CurentGame_Stats
@@ -318,15 +150,6 @@ IS
 	r_game_record game_info%ROWTYPE;
 	ex_invalid_player_c_info exception;
 BEGIN
-	/*IF (p_date.length = 0 OR p_player1.length = 0) THEN
-		SELECT * INTO r_game_record from game_info WHERE g_id = p_game_id;
-    ELSIF (p_game_id.length = 0 OR p_player1.length = 0) THEN
-		 SELECT * INTO r_game_record from game_info WHERE g_date = p_date;
-	ELSIF (p_game_id.length = 0 OR p_game_id.length = 0) THEN
-		 SELECT * INTO r_game_record from game_info WHERE player_1 = p_player1;
-	ELSE 
-		SELECT * INTO r_game_record from game_info WHERE player_1 = p_player1 AND g_date = p_date AND g_id = p_game_id;
-	*/ 
 	IF (p_game_id.length = 0 OR p_date.length = 0 OR p_player.length = 0) THEN
 	SELECT * INTO r_game_record from game_info WHERE g_id = p_game_id or g_date = p_date or g_player = p_player;
 	ELSE 
@@ -380,16 +203,40 @@ BEGIN
 END resume_cards;
 
 
-CREATE OR REPLACE PACKAGE deck_package IS 
+CREATE OR REPLACE PROCEDURE display_game_score (player_id IN OUT user_info.account_name%TYPE, card_id IN OUT Deck_Cards.card_id%TYPE )
+IS
+	excep_no_game_found EXCEPTION;
+	rec_game_his game_info%ROWTYPE;
+	rec_game_play_his game_info%ROWTYPE;
+	v_count INTEGER;
+BEGIN
+	SELECT * INTO rec_game_his FROM game_info WHERE g_id = game_id AND resume = 'T';
+	WHEN NO_DATA_FOUND RAISE(excep_no_game_found);
+	SELECT count(*) into v_count from Deck_Cards;
+	FOR i in 1..v_count LOOP
+	  COLL(i) := SELECT g_id  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	  COLL(i) := SELECT  player_name  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	  COLL(i) :=  SELECT card_id  FROM game_players_cards where g_id =  game_id AND game_ORDER = i;
+	END LOOP;
+	EXCEPTION
+	WHEN excep_no_game_found THEN
+		DBMS_OUTPUT.PUT_LINE('Game does not exist or has ended');
+END resume_cards;
 
+
+CREATE OR REPLACE PACKAGE deck_package IS 
+ 
+  --shuffle deck header--
   PROCEDURE shuffle_deck;
   
+  --get card value header--
   FUNCTION get_card_value;
   
 END deck_of_cards;
 
 CREATE OR REPLACE PACKAGE BODY deck_package IS
-  
+	
+  --shuffle deck body--
   PROCEDURE shuffle_deck    
 	IS
 	  v_card_rec Deck_Cards%ROWTYPE;
@@ -403,7 +250,7 @@ CREATE OR REPLACE PACKAGE BODY deck_package IS
 	   END LOOP;		   
   END shuffle_deck;
   
-  
+  --get card value body--
   FUNCTION get_card_value
 	  ( face_value IN VARCHAR		
 		  hand_value IN NUMBER )	
@@ -433,3 +280,216 @@ CREATE OR REPLACE PACKAGE BODY deck_package IS
 END;
   
 END deck_package;
+
+
+
+CREATE OR REPLACE PACKAGE game_initial IS 
+
+  --Game Initialization Header--
+  PROCEDURE  game_inital
+ (p_player_num  IN OUT INTEGER DEFAULT 1,
+  p_hint  IN BOOLEAN DEFAULT TRUE);
+  
+  --check player info header--
+  FUNCTION check_player_info;
+  
+  --check user info header--
+  FUNCTION check_user_info;
+
+    --create user header--
+	PROCEDURE create_user_info
+		 (p_account_name  IN OUT user_info.account_name%TYPE,
+		  p_email IN OUT user_info.email%TYPE,
+		  p_password IN OUT user_info.password%TYPE,
+		  p_f_name IN OUT user_info.f_name%TYPE,
+		  p_l_name IN OUT user_info.l_name%TYPE) ;
+		  
+	--reader user header--
+	PROCEDURE read_user_info
+		 (p_account_name  IN user_info.account_name%TYPE);	
+		 
+    --update user header--
+	PROCEDURE update_user_info
+		 (p_account_name  IN OUT user_info.account_name%TYPE,
+		  p_email IN OUT user_info.email%TYPE,
+		  p_f_name IN OUT user_info.f_name%TYPE,
+		  p_l_name IN OUT user_info.l_name%TYPE);
+		
+	--change password header--	
+	PROCEDURE change_user_pwd
+		 (p_account_name  IN OUT user_info.account_name%TYPE,
+		  p_password IN OUT user_info.password%TYPE);
+
+	--delete user header--	  
+	PROCEDURE delete_user_info
+		 (p_account_name  IN user_info.account_name%TYPE);
+	 
+END game_initial;
+
+CREATE OR REPLACE PACKAGE BODY game_initial IS
+	--Game Initialization Body--
+	CREATE OR REPLACE PROCEDURE  game_inital
+	 (p_player_num  IN OUT INTEGER DEFAULT 1,
+	  p_hint  IN BOOLEAN DEFAULT TRUE)
+	IS
+	  s_dept_id f_emps.department_id%TYPE;
+	  v_player game_info.g_player%TYPE;
+	  v_game_id game_info.game_id%TYPE;
+	  ex_invalid_player_num exception;
+	BEGIN
+	   IF (p_player_num > 3) THEN
+		 RAISE ex_invalid_player_num;
+	   IF (p_hint = TRUE) THEN 
+		 DBMS_OUTPUT.PUT_LINE ('Number of Players - ' || p_player_num);
+		 
+		 v_game_id = game_sequence.NEXTVAL;
+		FOR i in 1...p_player_num LOOP	
+		  check_player_info(&player_name,&password);
+		  v_player1 := player_name;	
+		  INSERT INTO game_info
+			(game_id, g_date,g_player, resume)
+			VALUES
+			(v_game_id, TO_DATE(SYSDATE,'DD-MON-YYYY'),v_player ,'T');	
+		 END LOOP;
+		 
+	EXCEPTION
+	   WHEN ex_invalid_player_num THEN 
+	   DBMS_OUTPUT.PUT_LINE ('Number of Players can not be more than 3!');
+	END game_inital;
+  
+    --check player info body--
+	CREATE OR REPLACE FUNCTION check_player_info(f_player_name IN user_info.account_name%TYPE, f_password IN user_info.password%TYPE)
+	RETURN BOOLEAN 
+	IS
+	v_username user_info.account_name%TYPE;
+	v_password user_info.password%TYPE;
+	BEGIN
+	--check if player exists
+		IF(check_user_info(player_name) = TRUE)THEN
+		--if player exists, then check the supplied username and password
+			SELECT account_name , password into v_username, v_password FROM user_info WHERE account_name = f_player_name;
+			--if row exists
+			IF (f_player_name = v_username AND f_password = v_password) THEN 
+				DBMS_OUTPUT.PUT_LINE('You have been logged in.');
+				return TRUE;
+				END IF;
+		ELSE EXECUTE create_user_info(&p_account_name, &p_email, &p_password, &p_f_name, &p_l_name);
+		
+		END IF;
+		EXCEPTION
+		WHEN NO_DATA_FOUND THEN
+		DBMS_OUTPUT.PUT_LINE('Wrong username or password.');
+	END	check_player_info;  
+	
+  
+	--check user info body--
+	CREATE OR REPLACE FUNCTION check_user_info
+	 (p_account_name  IN OUT user_info.account_name%TYPE) 
+	 RETURN BOOLEAN 
+	IS
+	BEGIN
+	   SELECT account_name FROM user_info WHERE account_name = p_account_name;
+	   DBMS_OUTPUT.PUT_LINE ('The User ' || account_name || ' exist!');
+	   return TRUE;
+	EXCEPTION
+	   WHEN NO_DATA_FOUND THEN 
+	   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
+	END check_user_info;  
+	
+	
+	--Create User body--
+	CREATE OR REPLACE PROCEDURE create_user_info
+	 (p_account_name  IN OUT user_info.account_name%TYPE,
+	  p_email IN OUT user_info.email%TYPE,
+	  p_password IN OUT user_info.password%TYPE,
+	  p_f_name IN OUT user_info.f_name%TYPE,
+	  p_l_name IN OUT user_info.l_name%TYPE) 
+	IS
+	  ex_invalid_player_c_info exception;
+	BEGIN
+	   IF p_account_name.LENGTH == 0 or p_email.LENGTH == 0 or p_password.LENGTH == 0 or p_f_name.LENGTH == 0 or p_l_name.LENGTH == 0 THEN 
+		 RAISE ex_invalid_player_c_info;
+	   ELSE   
+		 INSERT INTO user_info VALUES(p_account_name,p_email,p_password,p_f_name,p_l_name);
+		 DBMS_OUTPUT.PUT_LINE ('The username ' || p_account_name || 'created successed!');
+	   END IF;
+	EXCEPTION
+	   WHEN ex_invalid_player_c_info THEN 
+	   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
+	END create_user_info;
+
+	--Read User body--
+	CREATE OR REPLACE PROCEDURE read_user_info
+	 (p_account_name  IN user_info.account_name%TYPE) 
+	IS
+	  v_info user_info%ROWTYPE;
+	BEGIN
+	   SELECT * into v_info FROM user_info WHERE account_name = p_account_name;
+	   DBMS_OUTPUT.PUT_LINE ('User Unique name -  ' || v_info.p_account);
+	   DBMS_OUTPUT.PUT_LINE ('Email - ' || v_info.p_email);
+	   DBMS_OUTPUT.PUT_LINE ('Password - ' || v_info.p_password);
+	   DBMS_OUTPUT.PUT_LINE ('First Name ' || v_info.p_f_name);
+	   DBMS_OUTPUT.PUT_LINE ('Last Name ' || v_info.p_l_name);
+	EXCEPTION
+	   WHEN NO_DATA_FOUND THEN 
+	   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
+	END read_user_info;
+
+    --update User body--
+	CREATE OR REPLACE PROCEDURE update_user_info
+	 (p_account_name  IN OUT user_info.account_name%TYPE,
+	  p_email IN OUT user_info.email%TYPE,
+	  p_f_name IN OUT user_info.f_name%TYPE,
+	  p_l_name IN OUT user_info.l_name%TYPE) 
+	IS
+	  ex_invalid_player_c_info exception;
+	BEGIN
+	   IF p_account_name.LENGTH == 0 or p_email.LENGTH == 0 or p_f_name.LENGTH == 0 or p_l_name.LENGTH == 0 THEN 
+		 RAISE ex_invalid_player_c_info;
+	   ELSE   
+		 UPDATE user_info SET email = p_email ,f_name = p_f_name,l_name = p_l_name WHERE account_name = p_account_name;
+	   END IF;
+	EXCEPTION
+	   WHEN ex_invalid_player_c_info THEN 
+	   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
+	END update_user_info;
+
+	--Change Password body--
+	CREATE OR REPLACE PROCEDURE change_user_pwd
+	 (p_account_name  IN OUT user_info.account_name%TYPE,
+	  p_password IN OUT user_info.password%TYPE) 
+	IS
+	  ex_invalid_player_c_info exception;
+	BEGIN
+	   IF  p_account_name.LENGTH == 0 or p_password.LENGTH == 0 THEN 
+		 RAISE ex_invalid_player_c_info;
+	   ELSE   
+		 UPDATE user_info SET password = p_password WHERE account_name = p_account_name;
+	   END IF;
+	EXCEPTION
+	   WHEN ex_invalid_player_c_info THEN 
+	   DBMS_OUTPUT.PUT_LINE ('All of user infomation are required,please enter all of them!');
+	END change_user_pwd;
+
+    --delete user body--
+	CREATE OR REPLACE PROCEDURE delete_user_info
+	 (p_account_name  IN user_info.account_name%TYPE) 
+	IS
+	  ex_invalid_player_c_info exception;
+	BEGIN
+	   DELETE FROM user_info WHERE account_name = p_account_name;
+	EXCEPTION
+	   WHEN NO_DATA_FOUND THEN 
+	   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
+	END delete_user_info;
+	
+END game_initial;
+
+
+------------main----------
+DECLARE
+BEGIN
+   DBMS_OUTPUT.PUT_LINE('Welcome to the BlackJack !!! -- JIAJUN XUE <nicoxue0324@gmail.com>');
+   DBMS_OUTPUT.PUT_LINE('Game Initialize..');
+   game_initial.game_inital(2,TRUE);
+END;
