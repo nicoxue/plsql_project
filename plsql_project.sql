@@ -157,7 +157,7 @@ BEGIN
 	END IF;
 EXCEPTION
    WHEN NO_DATA_FOUND THEN 
-   DBMS_OUTPUT.PUT_LINE ('The User does not exist!');
+   DBMS_OUTPUT.PUT_LINE ('The Game does not exist!');
 END get_game_h_info;
 
 CREATE OR REPLACE PROCEDURE abort_game ( game_id IN game_info.g_id%TYPE, player_name IN game_info.g_player%TYPE)
